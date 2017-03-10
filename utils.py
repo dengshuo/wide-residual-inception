@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import pdb
 
 ## TensorFlow helper functions
 
@@ -39,50 +40,57 @@ def _fc(x, out_dim, name='fc'):
     return fc
 
 
-def _bn(x, is_train, global_step=None, name='bn'):
-    moving_average_decay = 0.9
-    # moving_average_decay = 0.99
-    # moving_average_decay_init = 0.99
-    with tf.variable_scope(name):
-        decay = moving_average_decay
-        # if global_step is None:
-            # decay = moving_average_decay
-        # else:
-            # decay = tf.cond(tf.greater(global_step, 100)
-                            # , lambda: tf.constant(moving_average_decay, tf.float32)
-                            # , lambda: tf.constant(moving_average_decay_init, tf.float32))
-        batch_mean, batch_var = tf.nn.moments(x, [0, 1, 2])
-        mu = tf.get_variable('mu', batch_mean.get_shape(), tf.float32,
-                        initializer=tf.zeros_initializer, trainable=False)
-        sigma = tf.get_variable('sigma', batch_var.get_shape(), tf.float32,
-                        initializer=tf.ones_initializer, trainable=False)
-        beta = tf.get_variable('beta', batch_mean.get_shape(), tf.float32,
-                        initializer=tf.zeros_initializer)
-        gamma = tf.get_variable('gamma', batch_var.get_shape(), tf.float32,
-                        initializer=tf.ones_initializer)
-        # BN when training
-        update = 1.0 - decay
-        # with tf.control_dependencies([tf.Print(decay, [decay])]):
-            # update_mu = mu.assign_sub(update*(mu - batch_mean))
-        update_mu = mu.assign_sub(update*(mu - batch_mean))
-        update_sigma = sigma.assign_sub(update*(sigma - batch_var))
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_mu)
-        tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_sigma)
+# def _bn(x, is_train, global_step=None, name='bn'):
+#     moving_average_decay = 0.9
+#     # moving_average_decay = 0.99
+#     # moving_average_decay_init = 0.99
+#     with tf.variable_scope(name):
+#         decay = moving_average_decay
+#         # if global_step is None:
+#             # decay = moving_average_decay
+#         # else:
+#             # decay = tf.cond(tf.greater(global_step, 100)
+#                             # , lambda: tf.constant(moving_average_decay, tf.float32)
+#                             # , lambda: tf.constant(moving_average_decay_init, tf.float32))
+#         batch_mean, batch_var = tf.nn.moments(x, [0, 1, 2])
+#         mu = tf.get_variable('mu', batch_mean.get_shape(), tf.float32,
+#                         initializer=tf.zeros_initializer, trainable=False)
+#         sigma = tf.get_variable('sigma', batch_var.get_shape(), tf.float32,
+#                         initializer=tf.ones_initializer, trainable=False)
+#         beta = tf.get_variable('beta', batch_mean.get_shape(), tf.float32,
+#                         initializer=tf.zeros_initializer)
+#         gamma = tf.get_variable('gamma', batch_var.get_shape(), tf.float32,
+#                         initializer=tf.ones_initializer)
+#         # BN when training
+#         update = 1.0 - decay
+#         # with tf.control_dependencies([tf.Print(decay, [decay])]):
+#             # update_mu = mu.assign_sub(update*(mu - batch_mean))
+#         update_mu = mu.assign_sub(update*(mu - batch_mean))
+#         update_sigma = sigma.assign_sub(update*(sigma - batch_var))
+#         tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_mu)
+#         tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_sigma)
 
-        mean, var = tf.cond(is_train, lambda: (batch_mean, batch_var),
-                            lambda: (mu, sigma))
-        bn = tf.nn.batch_normalization(x, mean, var, beta, gamma, 1e-5)
+#         mean, var = tf.cond(is_train, lambda: (batch_mean, batch_var),
+#                             lambda: (mu, sigma))
+#         bn = tf.nn.batch_normalization(x, mean, var, beta, gamma, 1e-5)
 
-        # bn = tf.nn.batch_normalization(x, batch_mean, batch_var, beta, gamma, 1e-5)
+#         # bn = tf.nn.batch_normalization(x, batch_mean, batch_var, beta, gamma, 1e-5)
 
-        # bn = tf.contrib.layers.batch_norm(inputs=x, decay=decay,
-                                          # updates_collections=[tf.GraphKeys.UPDATE_OPS], center=True,
-                                          # scale=True, epsilon=1e-5, is_training=is_train,
-                                          # trainable=True)
-    return bn
+#         # bn = tf.contrib.layers.batch_norm(inputs=x, decay=decay,
+#                                           # updates_collections=[tf.GraphKeys.UPDATE_OPS], center=True,
+#                                           # scale=True, epsilon=1e-5, is_training=is_train,
+#                                           # trainable=True)
+#     return bn
 
+def _bn(input,is_train,global_step=None,name='bn'):
+        return tf.contrib.layers.batch_norm(input,scale=True,center=True,is_training=is_train,scope=name)
 
 ## Other helper functions
+
+
+def _avg_pool(input,padding,name):
+	filter_size = input.get_shape()[1]
+	return tf.nn.avg_pool(input,[1,filter_size,filter_size,1],[1,1,1,1],padding=padding,name=name)
 
 
 
@@ -140,6 +148,7 @@ def _inception1(input,filter_size,kernel_num,is_train,global_step,name):
 
     print conv_1_relu.get_shape(), conv_a.get_shape(), conv_b.get_shape()
     out=tf.concat(3,[conv_1_relu,conv_a,conv_b])
+    out=_conv(out,filter_size[4],kernel_num[4],1,name=(name+'out_conv'))
     out=_bn(out,is_train,global_step,name=(name+'out_bn'))
     out=_relu(out,name=(name+'out_relu'))
 

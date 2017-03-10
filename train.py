@@ -10,6 +10,7 @@ import numpy as np
 import cifar10_input as data_input
 import wrinc
 import utils
+import pdb
 
 
 
@@ -20,19 +21,14 @@ tf.app.flags.DEFINE_integer('num_train_instance', 50000, """Number of training i
 tf.app.flags.DEFINE_integer('num_test_instance', 10000, """Number of test images.""")
 
 # Network Configuration
-tf.app.flags.DEFINE_integer('batch_size', 128, """Number of images to process in a batch.""")
-#tf.app.flags.DEFINE_integer('num_residual_units', 2, """Number of residual block per group.
-#                                                Total number of conv layers will be 6n+4""")
-#tf.app.flags.DEFINE_integer('k', 2, """Network width multiplier""")
+tf.app.flags.DEFINE_integer('batch_size', 100, """Number of images to process in a batch.""")
 
-# Optimization Configuration
-#tf.app.flags.DEFINE_float('l2_weight', 0.0001, """L2 loss weight applied all the weights""")
+
 tf.app.flags.DEFINE_float('momentum', 0.9, """The momentum of MomentumOptimizer""")
 tf.app.flags.DEFINE_float('initial_lr', 0.1, """Initial learning rate""")
 tf.app.flags.DEFINE_float('lr_step_epoch', 100.0, """Epochs after which learing rate decays""")
 tf.app.flags.DEFINE_float('lr_decay', 0.1, """Learning rate decay factor""")
-# tf.app.flags.DEFINE_boolean('basenet_train', True, """Flag whether the model will train the base network""")
-# tf.app.flags.DEFINE_float('basenet_lr_ratio', 0.1, """Learning rate ratio of basenet to bypass net""")
+
 # tf.app.flags.DEFINE_boolean('finetune', False,
                             # """Flag whether the L1 connection weights will be only made at
                             # the position where the original bypass network has nonzero
@@ -41,10 +37,10 @@ tf.app.flags.DEFINE_float('lr_decay', 0.1, """Learning rate decay factor""")
 
 # Training Configuration
 tf.app.flags.DEFINE_string('train_dir', './train', """Directory where to write log and checkpoint.""")
-tf.app.flags.DEFINE_integer('max_steps', 100000, """Number of batches to run.""")
+tf.app.flags.DEFINE_integer('max_steps', 360000, """Number of batches to run.""")
 tf.app.flags.DEFINE_integer('display', 100, """Number of iterations to display training info.""")
-tf.app.flags.DEFINE_integer('test_interval', 1000, """Number of iterations to run a test""")
-tf.app.flags.DEFINE_integer('test_iter', 10, """Number of iterations during a test""")
+tf.app.flags.DEFINE_integer('test_interval', 3000, """Number of iterations to run a test""")
+tf.app.flags.DEFINE_integer('test_iter', 100, """Number of iterations during a test""")
 tf.app.flags.DEFINE_integer('checkpoint_interval', 5000, """Number of iterations to save parameters as a checkpoint""")
 tf.app.flags.DEFINE_float('gpu_fraction', 0.95, """The fraction of GPU memory to be allocated""")
 tf.app.flags.DEFINE_boolean('log_device_placement', False, """Whether to log device placement.""")
@@ -123,6 +119,7 @@ def train():
         # Create a saver.
         saver = tf.train.Saver(tf.all_variables(), max_to_keep=10000)
         ckpt = tf.train.get_checkpoint_state(FLAGS.train_dir)
+        #pdb.set_trace()
         if ckpt and ckpt.model_checkpoint_path:
            print('\tRestore from %s' % ckpt.model_checkpoint_path)
            # Restores from checkpoint

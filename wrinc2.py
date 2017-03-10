@@ -29,7 +29,7 @@ class wrinc(object):
         print('Building model')
         # Init. conv.
         print('\tBuilding unit: conv1')
-        conv_1 = utils._conv(self._images, 3, 16, 1, name='conv_1')
+        conv_1 = utils._conv(self._images, 3, 64, 1, name='conv_1')
         conv_1_bn = utils._bn(conv_1, self.is_train, self._global_step, name='conv_1_bn')
         conv1_relu = utils._relu(conv_1_bn, name='conv1_relu')
 
@@ -42,17 +42,16 @@ class wrinc(object):
             conv2_2=utils._residual_mod(conv2_1,3,64,False,False,self.is_train,self._global_step,name='conv2_2')
 
         with tf.variable_scope('conv3' ) as scope:
-            conv3=utils._residual_mod(conv2_2,3,128,False,True,self.is_train,self._global_step,name='conv3')
+            conv3=utils._residual_mod(conv2_2,3,256,False,True,self.is_train,self._global_step,name='conv3')
 
 #_inception1(input,filter_size,kernel_num,is_train,global_step,name=basename):
         with tf.variable_scope('inception' ) as scope:
-            inception=utils._inception1(conv3,[1,3,3,3,1],[128,64,128,64,128],self.is_train,self._global_step,name='inception')
+            inception=utils._inception1(conv3,[1,3,3,3,1],[256,128,256,128,256],self.is_train,self._global_step,name='inception')
 
 
         with tf.variable_scope('conv4' ) as scope:
             conv4=utils._residual_mod(inception,3,256,False,True,self.is_train,self._global_step,name='conv4')
             conv4_ave_pool=utils._avg_pool(conv4,'VALID',name='conv4_ave_pool')
-
         # Logit
         with tf.variable_scope('logits') as scope:
             print('\tBuilding unit: %s' % scope.name)

@@ -8,23 +8,23 @@ import time
 import tensorflow as tf
 import numpy as np
 
-import cifar100_input as data_input
-import resnet
+import cifar10_input as data_input
+import wrinc
 import utils
 
 
 
 # Dataset Configuration
-tf.app.flags.DEFINE_string('data_dir', './cifar-100-binary', """Path to the CIFAR-100 binary data.""")
-tf.app.flags.DEFINE_integer('num_classes', 100, """Number of classes in the dataset.""")
+tf.app.flags.DEFINE_string('data_dir', './cifar-10-batches-bin', """Path to the CIFAR-100 binary data.""")
+tf.app.flags.DEFINE_integer('num_classes', 10, """Number of classes in the dataset.""")
 tf.app.flags.DEFINE_integer('num_test_instance', 10000, """Number of test images.""")
 tf.app.flags.DEFINE_integer('num_train_instance', 50000, """Number of training images.""")
 
 # Network Configuration
 tf.app.flags.DEFINE_integer('batch_size', 100, """Number of images to process in a batch.""")
-tf.app.flags.DEFINE_integer('num_residual_units', 2, """Number of residual block per group.
-                                                Total number of conv layers will be 6n+4""")
-tf.app.flags.DEFINE_integer('k', 2, """Network width multiplier""")
+#tf.app.flags.DEFINE_integer('num_residual_units', 2, """Number of residual block per group.
+#                                                Total number of conv layers will be 6n+4""")
+#tf.app.flags.DEFINE_integer('k', 2, """Network width multiplier""")
 
 # Testing Configuration
 tf.app.flags.DEFINE_string('ckpt_path', '', """Path to the checkpoint or dir.""")
@@ -36,7 +36,7 @@ tf.app.flags.DEFINE_boolean('log_device_placement', False, """Whether to log dev
 
 # Other Configuration(not needed for testing, but required fields in
 # build_model())
-tf.app.flags.DEFINE_float('l2_weight', 0.0001, """L2 loss weight applied all the weights""")
+#tf.app.flags.DEFINE_float('l2_weight', 0.0001, """L2 loss weight applied all the weights""")
 tf.app.flags.DEFINE_float('momentum', 0.9, """The momentum of MomentumOptimizer""")
 tf.app.flags.DEFINE_float('initial_lr', 0.1, """Initial learning rate""")
 tf.app.flags.DEFINE_float('lr_step_epoch', 100.0, """Epochs after which learing rate decays""")
@@ -53,8 +53,8 @@ def train():
 
     print('[Network Configuration]')
     print('\tBatch size: %d' % FLAGS.batch_size)
-    print('\tResidual blocks per group: %d' % FLAGS.num_residual_units)
-    print('\tNetwork width multiplier: %d' % FLAGS.k)
+    #print('\tResidual blocks per group: %d' % FLAGS.num_residual_units)
+    #print('\tNetwork width multiplier: %d' % FLAGS.k)
 
     print('[Testing Configuration]')
     print('\tCheckpoint path: %s' % FLAGS.ckpt_path)
@@ -71,7 +71,7 @@ def train():
             test_images, test_labels = data_input.inputs(not FLAGS.train_data, FLAGS.data_dir, FLAGS.batch_size)
 
         # The class labels
-        with open(os.path.join(FLAGS.data_dir, 'fine_label_names.txt')) as fd:
+        with open(os.path.join(FLAGS.data_dir, 'batches.meta.txt')) as fd:
             classes = [temp.strip() for temp in fd.readlines()]
 
         # Build a Graph that computes the predictions from the inference model.
@@ -80,16 +80,13 @@ def train():
 
         # Build model
         decay_step = FLAGS.lr_step_epoch * FLAGS.num_train_instance / FLAGS.batch_size
-        hp = resnet.HParams(batch_size=FLAGS.batch_size,
+        hp = wrinc.HParams(batch_size=FLAGS.batch_size,
                             num_classes=FLAGS.num_classes,
-                            num_residual_units=FLAGS.num_residual_units,
-                            k=FLAGS.k,
-                            weight_decay=FLAGS.l2_weight,
                             initial_lr=FLAGS.initial_lr,
                             decay_step=decay_step,
                             lr_decay=FLAGS.lr_decay,
                             momentum=FLAGS.momentum)
-        network = resnet.ResNet(hp, images, labels, None)
+        network = wrinc.wrinc(hp, images, labels, None)
         network.build_model()
         # network.build_train_op()  # NO training op
 
