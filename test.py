@@ -105,10 +105,10 @@ def train():
         network.build_train_op()
 
         # Summaries(training)
-        train_summary_op = tf.summary.merge_all()
+        train_summary_op = tf.merge_all_summaries()
 
         # Build an initialization operation to run below.
-        init = tf.global_variables_initializer()
+        init = tf.initialize_all_variables()
 
         # Start running operations on the Graph.
         sess = tf.Session(config=tf.ConfigProto(
@@ -130,74 +130,17 @@ def train():
 
         # Start queue runners & summary_writer
         tf.train.start_queue_runners(sess=sess)
-        if not os.path.exists(FLAGS.train_dir):
-            os.mkdir(FLAGS.train_dir)
-        summary_writer = tf.summary.FileWriter(FLAGS.train_dir, sess.graph)
 
         # Training!
-        test_best_acc = 0.0
-        for step in xrange(init_step, FLAGS.max_steps):
-            # Test
-            if step % FLAGS.test_interval == 0:
-                test_loss, test_acc = 0.0, 0.0
-                for i in range(FLAGS.test_iter):
-                    test_images_val, test_labels_val = sess.run([test_images, test_labels])
-                    loss_value, acc_value = sess.run([network.loss,network.acc],
-                                feed_dict={network.is_train:False, images:test_images_val, labels:test_labels_val})
-                    test_loss += loss_value
-                    test_acc += acc_value
-                test_loss /= FLAGS.test_iter
-                test_acc /= FLAGS.test_iter
-                test_best_acc = max(test_best_acc, test_acc)
-                format_str = ('%s: (Test)     step %d, loss=%.4f, acc=%.4f')
-                print (format_str % (datetime.now(), step, test_loss, test_acc))
-
-                # test_summary = tf.Summary()
-                # test_summary.value.add(tag='test/loss', simple_value=test_loss)
-                # test_summary.value.add(tag='test/acc', simple_value=test_acc)
-                # test_summary.value.add(tag='test/best_acc', simple_value=test_best_acc)
-                # summary_writer.add_summary(test_summary, step)
-                # test_loss_summary = tf.Summary()
-                # test_loss_summary.value.add(tag='test/loss', simple_value=test_loss)
-                # summary_writer.add_summary(test_loss_summary, step)
-                # test_acc_summary = tf.Summary()
-                # test_acc_summary.value.add(tag='test/acc', simple_value=test_acc)
-                # summary_writer.add_summary(test_acc_summary, step)
-                # test_best_acc_summary = tf.Summary()
-                # test_best_acc_summary.value.add(tag='test/best_acc', simple_value=test_best_acc)
-                # summary_writer.add_summary(test_best_acc_summary, step)
-                # summary_writer.flush()
-
-            # Train
-            start_time = time.time()
-            train_images_val, train_labels_val = sess.run([train_images, train_labels])
-            _, lr_value, loss_value, acc_value, = \
-                    sess.run([network.train_op, network.lr, network.loss, network.acc],
-                        feed_dict={network.is_train:True, images:train_images_val, labels:train_labels_val})
-            duration = time.time() - start_time
-
-            assert not np.isnan(loss_value)
-
-            # Display & Summary(training)
-            if step % FLAGS.display == 0:
-                num_examples_per_step = FLAGS.batch_size
-                examples_per_sec = num_examples_per_step / duration
-                sec_per_batch = float(duration)
-                format_str = ('%s: (Training) step %d, loss=%.4f, acc=%.4f, lr=%f (%.1f examples/sec; %.3f '
-                              'sec/batch)')
-                print (format_str % (datetime.now(), step, loss_value, acc_value, lr_value,
-                                     examples_per_sec, sec_per_batch))
-                # summary_writer.add_summary(train_summary_str, step)
-
-            # Save the model checkpoint periodically.
-            if (step > init_step and step % FLAGS.checkpoint_interval == 0) or (step + 1) == FLAGS.max_steps:
-                checkpoint_path = os.path.join(FLAGS.train_dir, 'model.ckpt')
-                saver.save(sess, checkpoint_path, global_step=step)
-
-
-def main(argv=None):  # pylint: disable=unused-argument
-  train()
-
-
-if __name__ == '__main__':
-  tf.app.run()
+        test_loss, test_acc = 0.0, 0.0
+        for i in range(FLAGS.test_iter):
+            test_images_val, test_labels_val = sess.run([test_images, test_labels])
+            loss_value, acc_value = sess.run([network.loss,network.acc],
+                        feed_dict={network.is_train:False, images:test_images_val, labels:test_labels_val})
+            test_loss += loss_value
+            test_acc += acc_value
+        test_loss /= FLAGS.test_iter
+        test_acc /= FLAGS.test_iter
+        test_best_acc = max(test_best_acc, test_acc)
+        format_str = ('%s: (Test)     step %d, loss=%.4f, acc=%.4f')
+        print (format_str % (datetime.now(), step, test_loss, test_acc))

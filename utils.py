@@ -92,12 +92,20 @@ def _avg_pool(input,padding,name):
 	filter_size = input.get_shape()[1]
 	return tf.nn.avg_pool(input,[1,filter_size,filter_size,1],[1,1,1,1],padding=padding,name=name)
 
+def _basic_conv(x, filter_size, out_channel, strides,is_train,global_step,name='conv'):
+    conv_out=_conv(x,filter_size,out_channel,strides,name=(name+'_conv'))
+    conv_bn=_bn(conv_out,is_train,global_step,name=(name+'_bn'))
+    conv_relu=_relu(conv_bn,name=(name+'_relu'))
+    return conv_relu
+
+
 
 
 def _residual_mod(input,filter_size,kernel_num,has_side_conv,is_stride,is_train,global_step,name):
 
     if is_stride:
         conv_add=_conv(input,1,kernel_num,2,name=(name+'_0_conv'))
+        print conv_add.get_shape()
         conv_add_bn=_bn(conv_add,is_train,global_step,name=(name+'_0_bn'))
         first_stride=2
     else:
@@ -109,6 +117,7 @@ def _residual_mod(input,filter_size,kernel_num,has_side_conv,is_stride,is_train,
             conv_add_bn=input
 
     conv_out=_conv(input,filter_size,kernel_num,first_stride,name=(name+'_1_conv'))
+    print conv_out.get_shape()
     conv_bn=_bn(conv_out,is_train,global_step,name=((name)+'_1_bn'))
     conv_relu=_relu(conv_bn,name=((name)+'_1_relu'))
 
@@ -117,10 +126,12 @@ def _residual_mod(input,filter_size,kernel_num,has_side_conv,is_stride,is_train,
     #conv_relu_2=_relu(conv_bn_2,name=((basename)+'_2_relu'))
 
 
-
+    pdb.set_trace()
     out=tf.add(conv_add_bn,conv_bn_2,name=((name)+'_residual_add'))
     out=_relu(out,name=((name)+'_residual_bn'))
     return out
+
+
 
 
 def _inception1(input,filter_size,kernel_num,is_train,global_step,name):
@@ -147,12 +158,12 @@ def _inception1(input,filter_size,kernel_num,is_train,global_step,name):
 
 
     print conv_1_relu.get_shape(), conv_a.get_shape(), conv_b.get_shape()
-    out=tf.concat(3,[conv_1_relu,conv_a,conv_b])
+    out=tf.concat([conv_1_relu,conv_a,conv_b],3)
     out=_conv(out,filter_size[4],kernel_num[4],1,name=(name+'out_conv'))
     out=_bn(out,is_train,global_step,name=(name+'out_bn'))
     out=_relu(out,name=(name+'out_relu'))
 
-    print out.get_shape()
+    #print out.get_shape()
 
     return out
 
